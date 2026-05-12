@@ -1,0 +1,45 @@
+{
+  "name": "TermsConfig",
+  "type": "object",
+  "properties": {
+    "section_key": {
+      "type": "string",
+      "description": "Unique key for this T&C section (e.g. 'section_1')"
+    },
+    "title": {
+      "type": "string",
+      "description": "Section title"
+    },
+    "content": {
+      "type": "string",
+      "description": "Section body text"
+    },
+    "order": {
+      "type": "number",
+      "description": "Display order"
+    }
+  },
+  "required": [
+    "section_key",
+    "title",
+    "content"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": null,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

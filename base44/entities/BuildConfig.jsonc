@@ -1,0 +1,60 @@
+{
+  "name": "BuildConfig",
+  "type": "object",
+  "properties": {
+    "config_key": {
+      "type": "string",
+      "description": "Unique key for the config (e.g. 'traditional_cost', 'basic_finish_multiplier')"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "construction_system",
+        "finish_tier",
+        "finish_detail",
+        "base_cost",
+        "extras"
+      ],
+      "description": "Category of configuration"
+    },
+    "label": {
+      "type": "string",
+      "description": "Display name"
+    },
+    "value": {
+      "type": "number",
+      "description": "Numeric value (cost per m\u00b2, multiplier, etc.)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Short description"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional data (advantages, disadvantages, etc.)"
+    }
+  },
+  "required": [
+    "config_key",
+    "category",
+    "value"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": null,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

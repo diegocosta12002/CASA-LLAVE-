@@ -1,0 +1,19 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "user"
+      ],
+      "default": "user"
+    },
+    "pdf_unlocked": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si el usuario ha pagado por el PDF premium"
+    }
+  }
+}

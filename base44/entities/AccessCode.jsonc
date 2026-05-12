@@ -1,0 +1,62 @@
+{
+  "name": "AccessCode",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string",
+      "description": "C\u00f3digo de acceso \u00fanico generado para el cliente"
+    },
+    "lead_id": {
+      "type": "string",
+      "description": "ID del lead asociado"
+    },
+    "lead_name": {
+      "type": "string",
+      "description": "Nombre del cliente"
+    },
+    "lead_email": {
+      "type": "string",
+      "description": "Email del cliente"
+    },
+    "used": {
+      "type": "boolean",
+      "description": "Si el c\u00f3digo ya fue usado",
+      "default": false
+    },
+    "used_by_email": {
+      "type": "string",
+      "description": "Email del usuario que canje\u00f3 el c\u00f3digo"
+    },
+    "used_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha y hora de uso"
+    }
+  },
+  "required": [
+    "code",
+    "lead_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

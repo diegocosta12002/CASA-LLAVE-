@@ -1,0 +1,88 @@
+{
+  "name": "SavedProject",
+  "type": "object",
+  "properties": {
+    "project_name": {
+      "type": "string",
+      "description": "Name of the saved project"
+    },
+    "area_m2": {
+      "type": "number",
+      "description": "Total area in square meters"
+    },
+    "construction_system": {
+      "type": "string",
+      "description": "Selected construction system"
+    },
+    "finish_mode": {
+      "type": "string",
+      "enum": [
+        "simple",
+        "advanced"
+      ],
+      "description": "Finish selection mode"
+    },
+    "finish_tier": {
+      "type": "string",
+      "description": "Simple mode tier (basic/standard/premium)"
+    },
+    "finish_details": {
+      "type": "object",
+      "description": "Advanced mode detailed selections"
+    },
+    "total_price": {
+      "type": "number",
+      "description": "Calculated total price"
+    },
+    "breakdown": {
+      "type": "object",
+      "description": "Cost breakdown object"
+    }
+  },
+  "required": [
+    "project_name",
+    "area_m2",
+    "construction_system"
+  ],
+  "rls": {
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "created_by": "{{user.email}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "created_by": "{{user.email}}"
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "created_by": "{{user.email}}"
+        }
+      ]
+    }
+  }
+}
