@@ -1,124 +1,43 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, X, Send, Loader2, Bot, User, Minimize2 } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, Bot, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { base44 } from "@/api/base44Client";
 
 const SYSTEM_PROMPT = `Sos el asistente virtual de TOBYCO Constructora, una empresa argentina especializada en casas llave en mano. Tu nombre es "Tobías".
 
 Respondé siempre de manera cordial, profesional y concisa. Usá lenguaje argentino (vos, podés, etc.). Tu objetivo principal es generar confianza y orientar al cliente a elegir TOBYCO como su empresa constructora. NUNCA sugieras que el cliente construya con otra empresa, por cuenta propia ni con personas no calificadas. Siempre destacá las ventajas de trabajar con una empresa profesional como TOBYCO. Si no sabés algo específico, invitá al cliente a usar el configurador online o contactar al equipo de TOBYCO.
 
-BASE DE CONOCIMIENTO CON RESPUESTAS FRECUENTES:
+BASE DE CONOCIMIENTO:
 
 🏠 SOBRE LA CASA:
+- El costo por m² depende de las terminaciones elegidas. El configurador online muestra exactamente cuánto cuesta cada opción.
+- INCLUYE: materiales, mano de obra, dirección de obra, permisos, instalaciones completas, terminaciones según elección.
+- NO INCLUYE: terreno, conexiones definitivas de servicios (medidores), amoblamiento.
 
-**¿Cuánto cuesta el m² real final?**
-Va a depender de las terminaciones que se le quiera colocar a la casa. Cada cliente elige entre diferentes niveles de calidad en pisos, revestimientos, carpinterías y finishings. El configurador online te permite ver exactamente cuánto cuesta cada opción.
-
-**¿Qué incluye y qué NO incluye?**
-Todo está detallado en el presupuesto. Te invito a que lo confecciones vos mismo en el configurador y al final se te entrega un informe detallado en base a tus decisiones. 
-✅ INCLUYE: materiales, mano de obra, dirección de obra, permisos, instalaciones completas, terminaciones según tu elección.
-❌ NO INCLUYE: terreno, conexiones definitivas de servicios (medidores), amoblamiento.
-
-**¿Cuánto tarda la obra?**
-Depende de la cantidad de metros a construir y el sistema elegido. Puede ir de 6 a 10 meses aproximadamente:
+⏱️ TIEMPOS DE OBRA:
 - Steel Framing: ~6 meses (más rápido)
 - Mixto: ~9 meses
 - Tradicional: ~10 meses
 
-**¿Qué sistema me conviene?**
-Todos los sistemas son buenos, va a depender de tu economía y tus tiempos. Si tenés prisa y presupuesto ajustado, Steel Framing es ideal. Si buscás máxima durabilidad y flexibilidad de diseño, el Tradicional es la opción clásica. El Mixto es perfecto si querés lo mejor de ambos mundos con diseño moderno.
+🧱 SISTEMAS DISPONIBLES:
+1. TRADICIONAL (Ladrillo hueco) — Desde u$s 1.200/m²
+2. STEEL FRAMING (Estructura metálica) — Desde u$s 1.190/m²
+3. SISTEMA MIXTO — Desde u$s 1.350/m²
 
-**¿Puedo ampliar en el futuro?**
-Sí, lo podés realizar en etapas. Incluso podés empezar con Obra Gris y completar las terminaciones después.
+OBRA GRIS (construir en etapas):
+- Tradicional: desde u$s 890/m²
+- Steel Framing: desde u$s 870/m²
+- Mixto: desde u$s 950/m²
 
 💸 SOBRE EL DINERO:
-
-**¿Cuánto necesito para empezar?**
-Según el cronograma de desembolsos detallado que te proporcionaremos al final del presupuestador. Te mostraremos exactamente cuánto necesitás en cada etapa de la obra.
-
-**¿Puedo construir por etapas?**
-Sí, se puede construir en etapas aunque no sea económicamente la opción más conveniente a largo plazo. Podés empezar con Obra Gris (estructura + cerramientos) y terminar las finalizaciones cuando tengas más presupuesto.
-
-**¿Cómo impacta la inflación?**
-Se ajusta mensualmente según el índice de la construcción C.A.C. (Cámara Argentina de la Construcción). Esto te protege porque los valores acompañan la realidad del mercado.
-
-**¿Qué pasa si me quedo sin presupuesto?**
-Podés programar la obra en base a tus costos disponibles. Con nosotros existe flexibilidad para ajustar los tiempos según tu capacidad de pago.
-
-🧱 SOBRE MATERIALES:
-
-**¿Qué calidad estoy eligiendo?**
-Las calidades son de primera. En TOBYCO usamos materiales premium que garantizan durabilidad y confort en tu vivienda.
-
-**¿Cuánto dura?**
-Depende del sistema elegido. La estructura Tradicional tiene durabilidad de décadas con mínimo mantenimiento. El Steel Framing también es muy duradero y requiere menos mantenimiento aún.
-
-**¿Cuál requiere menos mantenimiento?**
-El Steel Framing es un sistema que requiere menos mantención y ofrece mayor rapidez constructiva. No necesita revoque cada tanto como el Tradicional y es más resistente a la humedad.
-
-⚙️ SOBRE LA EJECUCIÓN:
-
-**¿Quién se encarga de los permisos?**
-Nuestros profesionales matriculados (arquitectos e ingenieros) se encargan de todos los trámites que se requieren. Vos no tenés que preocuparte por nada.
-
-**¿Incluye dirección de obra?**
-Sí, tenemos un profesional a cargo en cada obra. Ellos supervisan que todo se ejecute según lo planificado y con la calidad comprometida.
-
-**¿Incluye mano de obra?**
-Los precios incluyen materiales y mano de obra. Todo está cubierto: albañiles, plomeros, electricistas, carpinteros, pintores. Es llave en mano de verdad.
-
-📊 SOBRE COMPARACIÓN Y DECISIONES:
-
-**¿Qué pasa si cambio a otro sistema?**
-Podés elegir entre 3 sistemas posibles eligiendo el que más te guste o te convenga. El configurador te permite comparar precios, tiempos y características en tiempo real. Cambiar es tan simple como un clic.
-
-**¿Dónde estoy gastando más?**
-En base a nuestro asesor de IA podés analizar tu decisión y estrategia para construir inteligentemente. Te mostramos dónde va cada peso y cómo ahorrar sin sacrificar calidad.
-
-📊 QUÉ SISTEMA CONVIENE — RESPUESTA DETALLADA:
-Cuando preguntes qué sistema te conviene, estos son los 3 sistemas llave en mano:
-
-🧱 1. TRADICIONAL (Ladrillo hueco)
-- Desde u$s 1.200/m²
-- Tiempo de obra: ~10 meses
-- Ideal para: quienes buscan durabilidad máxima y flexibilidad de diseño. El sistema más probado en Argentina.
-- Ventajas: gran flexibilidad de formas, muy durable, excelente aislación térmica por masa.
-- A considerar: mayor tiempo de obra y más residuos.
-
-⚡ 2. STEEL FRAMING (Estructura metálica en seco)
-- Desde u$s 1.190/m²
-- Tiempo de obra: ~6 meses (el más rápido)
-- Ideal para: quienes priorizan velocidad, eficiencia energética y menor impacto ambiental.
-- Ventajas: construcción rápida, liviana, excelente aislación, menos residuos.
-- A considerar: requiere profesionales especializados.
-
-🔀 3. SISTEMA MIXTO (Tradicional + Steel Framing)
-- Desde u$s 1.350/m²
-- Tiempo de obra: ~9 meses
-- Ideal para: proyectos contemporáneos con grandes ventanales y lo mejor de ambos mundos.
-- Ventajas: diseño moderno, máxima eficiencia energética, grandes aventanamientos posibles.
-
-🏗️ OPCIÓN OBRA GRIS (para construir en etapas o con presupuesto ajustado):
-Si no contás con todo el dinero o querés ir de a poco, Obra Gris es una excelente alternativa:
-- Incluye: estructura, cerramientos, instalaciones básicas (sin terminaciones)
-- El costo varía según el sistema estructural elegido:
-  • Obra Gris Tradicional: desde u$s 890/m²
-  • Obra Gris Steel Framing: desde u$s 870/m²
-  • Obra Gris Mixto: desde u$s 950/m²
-- Las terminaciones se realizan en una segunda etapa cuando dispongas de más presupuesto.
-- No es la opción más económica a largo plazo, pero permite empezar a construir antes.
+- Se puede construir en etapas empezando con Obra Gris.
+- Los precios se ajustan mensualmente según el índice CAC.
 
 CONTACTO TOBYCO:
 - Web: www.tobycoconstructora.com.ar
 - Email: info@tobyco.com.ar
-- WhatsApp: +54 9 11 4041-9044
-
-Si te preguntan algo fuera de tu conocimiento sobre construcción o TOBYCO, respondé con amabilidad y sugerí contactar al equipo o usar el configurador.
-
-**CORRECCIONES IMPORTANTES:**
-Si alguien menciona nuestra página web, siempre referite a: www.tobycoconstructora.com.ar (no tobyco.com.ar ni variaciones).`;
+- WhatsApp: +54 9 11 4041-9044`;
 
 const QUICK_QUESTIONS = [
   "¿Cuánto cuesta el m²?",
@@ -141,9 +60,7 @@ export default function TobyAssistant() {
   const inputRef = useRef(null);
 
   useEffect(() => {
-    if (open) {
-      setTimeout(() => inputRef.current?.focus(), 300);
-    }
+    if (open) setTimeout(() => inputRef.current?.focus(), 300);
   }, [open]);
 
   useEffect(() => {
@@ -160,35 +77,40 @@ export default function TobyAssistant() {
     setLoading(true);
 
     try {
-      const history = newMessages
-        .map((m) => `${m.role === "user" ? "Cliente" : "Tobías"}: ${m.content}`)
-        .join("\n\n");
-
-      const res = await base44.integrations.Core.InvokeLLM({
-        prompt: `${SYSTEM_PROMPT}\n\nConversación:\n${history}\n\nToby:`,
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          max_tokens: 500,
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            ...newMessages.map((m) => ({ role: m.role, content: m.content })),
+          ],
+        }),
       });
 
-      const reply = typeof res === "string" ? res : res?.response || "No pude procesar tu consulta. ¿Podés repetirla?";
+      const data = await response.json();
+      const reply = data.choices?.[0]?.message?.content || "No pude procesar tu consulta. ¿Podés repetirla?";
       setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
     } catch {
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "Ocurrió un error. Por favor, intentá de nuevo o contactanos por WhatsApp." },
+        { role: "assistant", content: "Ocurrió un error. Por favor contactanos por WhatsApp: +54 9 11 4041-9044" },
       ]);
     } finally {
       setLoading(false);
     }
   };
 
-  const formatText = (text) => {
-    return text
-      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-      .replace(/\n/g, "<br/>");
-  };
+  const formatText = (text) =>
+    text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br/>");
 
   return (
     <>
-      {/* Chat window */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -199,7 +121,6 @@ export default function TobyAssistant() {
             className="fixed bottom-[160px] right-5 z-50 w-[360px] max-w-[calc(100vw-24px)] bg-card border rounded-2xl shadow-2xl flex flex-col overflow-hidden"
             style={{ height: "520px" }}
           >
-            {/* Header */}
             <div className="bg-primary px-4 py-3 flex items-center gap-3 flex-shrink-0">
               <div className="w-9 h-9 rounded-full bg-primary-foreground/20 flex items-center justify-center">
                 <Bot className="w-5 h-5 text-primary-foreground" />
@@ -210,33 +131,21 @@ export default function TobyAssistant() {
                   <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" /> En línea
                 </div>
               </div>
-              <button
-                onClick={() => setOpen(false)}
-                className="p-1.5 rounded-full hover:bg-primary-foreground/20 transition-colors"
-              >
+              <button onClick={() => setOpen(false)} className="p-1.5 rounded-full hover:bg-primary-foreground/20 transition-colors">
                 <X className="w-4 h-4 text-primary-foreground" />
               </button>
             </div>
 
-            {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {messages.map((msg, i) => (
-                <div
-                  key={i}
-                  className={`flex gap-2 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}
-                >
+                <div key={i} className={`flex gap-2 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
                   <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${msg.role === "user" ? "bg-primary" : "bg-secondary"}`}>
                     {msg.role === "user"
                       ? <User className="w-3.5 h-3.5 text-primary-foreground" />
-                      : <Bot className="w-3.5 h-3.5 text-foreground" />
-                    }
+                      : <Bot className="w-3.5 h-3.5 text-foreground" />}
                   </div>
                   <div
-                    className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${
-                      msg.role === "user"
-                        ? "bg-primary text-primary-foreground rounded-tr-sm"
-                        : "bg-secondary text-foreground rounded-tl-sm"
-                    }`}
+                    className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${msg.role === "user" ? "bg-primary text-primary-foreground rounded-tr-sm" : "bg-secondary text-foreground rounded-tl-sm"}`}
                     dangerouslySetInnerHTML={{ __html: formatText(msg.content) }}
                   />
                 </div>
@@ -255,7 +164,6 @@ export default function TobyAssistant() {
                 </div>
               )}
 
-              {/* Quick questions — only show on first message */}
               {messages.length === 1 && !loading && (
                 <div className="space-y-1.5 pt-1">
                   <p className="text-xs text-muted-foreground">Preguntas frecuentes:</p>
@@ -270,11 +178,9 @@ export default function TobyAssistant() {
                   ))}
                 </div>
               )}
-
               <div ref={bottomRef} />
             </div>
 
-            {/* Input */}
             <div className="border-t p-3 flex gap-2 flex-shrink-0">
               <Input
                 ref={inputRef}
@@ -285,12 +191,7 @@ export default function TobyAssistant() {
                 disabled={loading}
                 className="text-sm h-9"
               />
-              <Button
-                size="icon"
-                className="h-9 w-9 flex-shrink-0"
-                onClick={() => sendMessage()}
-                disabled={!input.trim() || loading}
-              >
+              <Button size="icon" className="h-9 w-9 flex-shrink-0" onClick={() => sendMessage()} disabled={!input.trim() || loading}>
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </Button>
             </div>
@@ -298,7 +199,6 @@ export default function TobyAssistant() {
         )}
       </AnimatePresence>
 
-      {/* Toggle button */}
       <motion.button
         onClick={() => setOpen((o) => !o)}
         className="fixed bottom-[76px] right-5 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors"
@@ -319,7 +219,6 @@ export default function TobyAssistant() {
         </AnimatePresence>
       </motion.button>
 
-      {/* Notification dot when closed */}
       {!open && (
         <motion.div
           initial={{ scale: 0 }}
