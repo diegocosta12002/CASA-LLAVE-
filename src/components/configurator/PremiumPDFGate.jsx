@@ -7,7 +7,6 @@ import { supabase } from "@/api/supabaseClient";
 
 // Códigos maestros — pueden usarse infinitas veces
 const MASTER_CODES = ["TOBYCO2024", "TOBYCO2025", "MASTER2024"];
-
 export default function PremiumPDFGate({ onUnlocked }) {
   const [showCodeModal, setShowCodeModal] = useState(false);
   const [code, setCode] = useState("");
@@ -179,8 +178,7 @@ export default function PremiumPDFGate({ onUnlocked }) {
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Código de acceso</label>
                       <Input
-                        placeholder="Ej: TOBYCO2024"
-                        value={code}
+placeholder="Ingresá tu código aquí"                        value={code}
                         onChange={(e) => { setCode(e.target.value.toUpperCase()); setError(""); }}
                         onKeyDown={(e) => e.key === "Enter" && handleRedeem()}
                         className="text-center font-mono text-base tracking-widest h-11"
