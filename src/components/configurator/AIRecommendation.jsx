@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Bot, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -16,34 +15,58 @@ export default function AIRecommendation({ area, system, finishMode, finishTier,
     const systemLabel = ALL_SYSTEMS[system]?.label || system;
     const tierLabel = finishMode === "simple" ? (FINISH_TIERS[finishTier]?.label || finishTier) : "personalizado";
 
-    const result = await base44.integrations.Core.InvokeLLM({
-      prompt: `Eres un asesor experto de TOBYCO Constructora, empresa argentina especializada en casas llave en mano. 
-El usuario configuró una vivienda con estas características:
+    try {
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          max_tokens: 500,
+          messages: [
+            {
+              role: "system",
+              content: "Sos un asesor experto de TOBYCO Constructora, empresa argentina especializada en casas llave en mano. Respondé en Markdown, de forma concisa y profesional.",
+            },
+            {
+              role: "user",
+              content: `El usuario configuró una vivienda con estas características:
 - Superficie: ${area} m²
 - Sistema constructivo: ${systemLabel}
 - Presupuesto estimado: ${formatCurrency(total)}
 
-Genera exactamente 4 tips concretos y útiles en formato Markdown, usando esta estructura:
+Generá exactamente 4 tips concretos y útiles en formato Markdown:
 
 ### 💡 Tips para tu proyecto
 
 **1. [título corto]**
-[tip en 1-2 oraciones. Si el sistema es Steel Frame u Obra Gris, mencionar ventajas de tiempo/costo. Si es Tradicional o Mixto, destacar durabilidad.]
+[tip en 1-2 oraciones sobre el sistema elegido]
 
 **2. [título corto]**
-[Si el presupuesto es menor a USD 150.000 sugerir Obra Gris como primera etapa o Steel Frame por velocidad. Si es mayor, validar que es una buena elección.]
+[consejo sobre presupuesto y etapas]
 
 **3. [título corto]**
-[Recomendar siempre construir con profesionales matriculados y empresa de confianza. Mencionar a TOBYCO Constructora como referente en Argentina con experiencia comprobada, contacto: www.tobycoconstructora.com.ar]
+[mencionar TOBYCO Constructora y www.tobycoconstructora.com.ar]
 
 **4. [título corto]**
-[Un tip práctico: ej. visitar el terreno con un arquitecto antes de empezar, o prever un 10% extra del presupuesto para imprevistos, o elegir terminaciones en función del uso real de cada ambiente.]
+[tip práctico: prever 10% extra, visitar terreno con arquitecto, etc.]
 
-Sé directo, profesional y amigable. Sin introducciones largas. Máximo 220 palabras en total.`,
-    });
+Máximo 220 palabras.`,
+            },
+          ],
+        }),
+      });
 
-    setRecommendation(result);
-    setLoading(false);
+      const data = await response.json();
+      const text = data.choices?.[0]?.message?.content || "No se pudo generar la recomendación.";
+      setRecommendation(text);
+    } catch {
+      setRecommendation("Ocurrió un error. Por favor contactanos por WhatsApp: +54 9 11 4041-9044");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

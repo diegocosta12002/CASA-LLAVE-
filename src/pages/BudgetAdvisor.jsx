@@ -23,12 +23,37 @@ const SYSTEM_ICONS = {
   mixed: Zap,
 };
 
-// Defaults fallback si no hay BD
 const OG_DEFAULTS = {
   obra_gris_traditional: 890,
   obra_gris_steel: 870,
   obra_gris_mixed: 950,
 };
+
+// ── Función para llamar a Groq ────────────────────────────────────────────────
+async function invokeGroq(prompt) {
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: "llama-3.3-70b-versatile",
+      max_tokens: 2000,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: "Sos un asesor de TOBYCO Constructora. Respondé SIEMPRE en JSON válido, sin texto adicional.",
+        },
+        { role: "user", content: prompt },
+      ],
+    }),
+  });
+  const data = await response.json();
+  const text = data.choices?.[0]?.message?.content || "{}";
+  return JSON.parse(text);
+}
 
 export default function BudgetAdvisor() {
   const [budget, setBudget] = useState("");
@@ -37,25 +62,20 @@ export default function BudgetAdvisor() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
 
-  // Fetch all pricing configs from DB
   const { data: allConfigs = [] } = useQuery({
     queryKey: ["all_buildconfigs_advisor"],
     queryFn: () => base44.entities.BuildConfig.list("-created_date", 500),
     staleTime: 60_000,
   });
 
-  // Helper to get a config value from DB with fallback
   const getConfigValue = (key, fallback) => {
     const rec = allConfigs.find(c => c.config_key === key);
     return rec ? rec.value : fallback;
   };
 
-  // Llave en mano costs from comparator_system_* configs
   const costTraditional = getConfigValue("comparator_system_traditional", 1200);
   const costSteelFrame  = getConfigValue("comparator_system_steel_frame", 1190);
   const costMixed       = getConfigValue("comparator_system_mixed", 1350);
-
-  // Obra gris costs from obra_gris_system_* configs
   const costOGTraditional = getConfigValue("obra_gris_system_obra_gris_traditional", OG_DEFAULTS.obra_gris_traditional);
   const costOGSteel       = getConfigValue("obra_gris_system_obra_gris_steel",       OG_DEFAULTS.obra_gris_steel);
   const costOGMixed       = getConfigValue("obra_gris_system_obra_gris_mixed",       OG_DEFAULTS.obra_gris_mixed);
@@ -73,23 +93,11 @@ export default function BudgetAdvisor() {
     try {
       const budgetUSD = currency === "ARS" ? numBudget / 1000 : numBudget;
 
-      // Compute gap reference costs dynamically
-      const refCosts = {
-        traditional: { m80: 80 * costTraditional, m120: 120 * costTraditional, m180: 180 * costTraditional },
-        steel_frame:  { m80: 80 * costSteelFrame,  m120: 120 * costSteelFrame,  m180: 180 * costSteelFrame  },
-        mixed:        { m80: 80 * costMixed,        m120: 120 * costMixed,       m180: 180 * costMixed       },
-      };
-
-      // Find the smallest standard size that fits within budget, or the next one up if doesn't fit
-      // Calculate buildable m² using the cheapest LEM system as reference
       const STANDARD_SIZES = [80, 120, 180];
       const cheapestSystemCost = Math.min(costTraditional, costSteelFrame, costMixed);
       const buildableM2 = budgetUSD / cheapestSystemCost;
-      
-      // Always round UP to the next standard size (80, 120, 180)
       const targetM2 = STANDARD_SIZES.find(s => s >= buildableM2) ?? 180;
 
-      // Compute the 3 alternatives for that single target size
       const computeAlternatives = (m2) => [
         { label: `Casa ${m2}m² — Obra Gris Tradicional`, mode: "obra_gris", cost_per_m2: costOGTraditional, total_cost: m2 * costOGTraditional, gap: Math.max(0, m2 * costOGTraditional - budgetUSD) },
         { label: `Casa ${m2}m² — Tradicional Llave en mano`, mode: "llave_en_mano", cost_per_m2: costTraditional, total_cost: m2 * costTraditional, gap: Math.max(0, m2 * costTraditional - budgetUSD) },
@@ -98,25 +106,12 @@ export default function BudgetAdvisor() {
 
       const computedAlternatives = { targetM2, alts: computeAlternatives(targetM2) };
 
-      const prompt = `Sos el asesor virtual de TOBYCO Constructora, empresa argentina líder en casas llave en mano con más de 10 años de experiencia y más de 500 casas entregadas. Tu objetivo es asesorar al cliente con honestidad pero siempre destacando las ventajas de construir con TOBYCO. Usá un tono cálido, profesional y orientado a generar confianza. NUNCA recomendés hacer obras por fuera de una empresa constructora profesional ni sugerir opciones que lleven al cliente a alejarse de contratar a TOBYCO.
+      const prompt = `Sos el asesor virtual de TOBYCO Constructora, empresa argentina líder en casas llave en mano.
 
-El cliente tiene un presupuesto disponible de u$s ${budgetUSD.toLocaleString("es-AR")} (dólares).
+El cliente tiene un presupuesto de u$s ${budgetUSD.toLocaleString("es-AR")}.
 
-IMPORTANTE — CONCEPTOS CLAVE:
-- Hay 3 sistemas constructivos llave en mano: Tradicional, Steel Framing y Sistema Mixto.
-- "Obra Gris" NO es un sistema constructivo independiente. Es una modalidad (sin terminaciones) que puede aplicarse a cualquiera de los 3 sistemas.
-- Costos llave en mano (ACTUALES): Tradicional u$s ${costTraditional}/m² | Steel Framing u$s ${costSteelFrame}/m² | Mixto u$s ${costMixed}/m²
-- Costos Obra Gris según sistema (ACTUALES): Obra Gris Tradicional u$s ${costOGTraditional}/m² | Obra Gris Steel Framing u$s ${costOGSteel}/m² | Obra Gris Mixto u$s ${costOGMixed}/m²
-
-CRITERIO PARA LA RECOMENDACIÓN: Recomendá el sistema llave en mano que dé MAYOR cantidad de m² construibles por el mismo presupuesto. Si dos sistemas dan igual cantidad de m², recomendá el de menor costo por m². Justificá siempre por qué construir con TOBYCO es la mejor decisión.
-
-Con ese presupuesto, calculá:
-
-1. Para cada uno de los 3 sistemas llave en mano, cuántos m² puede construir exactamente (presupuesto / costo/m²), redondeado.
-2. El sistema RECOMENDADO según el criterio anterior.
-3. Exactamente 3 consejos concretos para maximizar el presupuesto con TOBYCO.
-4. La estrategia de Obra Gris como alternativa separada.
-5. Las alternativas para llegar a casas de 80m², 120m² o 180m². Para cada tamaño, las mejores 3 alternativas ordenadas por menor gap (de menor a mayor inversión adicional), siendo 1 obligatoriamente de Obra Gris.
+Costos llave en mano: Tradicional u$s ${costTraditional}/m² | Steel Framing u$s ${costSteelFrame}/m² | Mixto u$s ${costMixed}/m²
+Costos Obra Gris: Tradicional u$s ${costOGTraditional}/m² | Steel Framing u$s ${costOGSteel}/m² | Mixto u$s ${costOGMixed}/m²
 
 Respondé en JSON con este esquema exacto:
 {
@@ -125,80 +120,14 @@ Respondé en JSON con este esquema exacto:
   "systems_analysis": [
     { "system_key": "traditional|steel_frame|mixed", "system_name": "string", "buildable_m2": number, "total_cost": number, "feasibility": "ideal|possible|limited|not_recommended", "note": "string" }
   ],
-  "obra_gris_analysis": [
-    { "base_system": "traditional|steel_frame|mixed", "system_name": "string", "cost_per_m2": number, "buildable_m2": number, "note": "string" }
-  ],
   "savings_tips": [
     { "title": "string", "description": "string", "potential_saving_pct": number }
   ],
   "phase_strategy": "string",
-  "gap_alternatives": {
-    "m2_80":  [ { "label": "string (ej: Sistema Tradicional Llave en mano)", "mode": "llave_en_mano|obra_gris", "cost_per_m2": number, "total_cost": number, "gap": number } ],
-    "m2_120": [ { "label": "string", "mode": "llave_en_mano|obra_gris", "cost_per_m2": number, "total_cost": number, "gap": number } ],
-    "m2_180": [ { "label": "string", "mode": "llave_en_mano|obra_gris", "cost_per_m2": number, "total_cost": number, "gap": number } ]
-  },
   "summary": "string"
 }`;
 
-      const response = await base44.integrations.Core.InvokeLLM({
-        prompt,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            recommended_system: { type: "string" },
-            recommendation_reason: { type: "string" },
-            systems_analysis: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  system_key: { type: "string" },
-                  system_name: { type: "string" },
-                  buildable_m2: { type: "number" },
-                  total_cost: { type: "number" },
-                  feasibility: { type: "string" },
-                  note: { type: "string" },
-                },
-              },
-            },
-            obra_gris_analysis: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  base_system: { type: "string" },
-                  system_name: { type: "string" },
-                  cost_per_m2: { type: "number" },
-                  buildable_m2: { type: "number" },
-                  note: { type: "string" },
-                },
-              },
-            },
-            savings_tips: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  title: { type: "string" },
-                  description: { type: "string" },
-                  potential_saving_pct: { type: "number" },
-                },
-              },
-            },
-            phase_strategy: { type: "string" },
-            gap_alternatives: {
-              type: "object",
-              properties: {
-                m2_80:  { type: "array", items: { type: "object", properties: { label: { type: "string" }, mode: { type: "string" }, cost_per_m2: { type: "number" }, total_cost: { type: "number" }, gap: { type: "number" } } } },
-                m2_120: { type: "array", items: { type: "object", properties: { label: { type: "string" }, mode: { type: "string" }, cost_per_m2: { type: "number" }, total_cost: { type: "number" }, gap: { type: "number" } } } },
-                m2_180: { type: "array", items: { type: "object", properties: { label: { type: "string" }, mode: { type: "string" }, cost_per_m2: { type: "number" }, total_cost: { type: "number" }, gap: { type: "number" } } } },
-              },
-            },
-            summary: { type: "string" },
-          },
-        },
-      });
-
+      const response = await invokeGroq(prompt);
       setResult({ ...response, budgetUSD, computedAlternatives });
     } catch (err) {
       setError("Hubo un problema al analizar tu presupuesto. Intentá de nuevo.");
@@ -211,7 +140,6 @@ Respondé en JSON con este esquema exacto:
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Nav */}
       <nav className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between px-6 py-3 max-w-7xl mx-auto">
           <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
@@ -235,7 +163,6 @@ Respondé en JSON con este esquema exacto:
       </nav>
 
       <div className="max-w-4xl mx-auto px-4 py-12">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -255,7 +182,6 @@ Respondé en JSON con este esquema exacto:
           </p>
         </motion.div>
 
-        {/* Input Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -273,7 +199,6 @@ Respondé en JSON con este esquema exacto:
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 mb-4">
-            {/* Currency toggle */}
             <div className="flex rounded-lg border overflow-hidden flex-shrink-0">
               {["USD", "ARS"].map((c) => (
                 <button
@@ -313,7 +238,6 @@ Respondé en JSON con este esquema exacto:
             </div>
           )}
 
-          {/* Quick amounts */}
           <div className="flex flex-wrap gap-2 mb-6">
             {(currency === "USD" ? [50000, 80000, 120000, 160000, 200000] : [50000000, 80000000, 120000000, 160000000]).map((amt) => (
               <button
@@ -333,20 +257,13 @@ Respondé en JSON con este esquema exacto:
             disabled={loading || !budget}
           >
             {loading ? (
-              <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                Analizando tu presupuesto...
-              </>
+              <><RefreshCw className="w-4 h-4 animate-spin" /> Analizando tu presupuesto...</>
             ) : (
-              <>
-                <Sparkles className="w-4 h-4" />
-                Analizar mi presupuesto
-              </>
+              <><Sparkles className="w-4 h-4" /> Analizar mi presupuesto</>
             )}
           </Button>
         </motion.div>
 
-        {/* Results */}
         <AnimatePresence>
           {result && (
             <motion.div
@@ -356,7 +273,6 @@ Respondé en JSON con este esquema exacto:
               transition={{ duration: 0.5 }}
               className="space-y-6"
             >
-              {/* Summary banner */}
               <div className="bg-primary rounded-2xl p-6 text-primary-foreground">
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -369,7 +285,6 @@ Respondé en JSON con este esquema exacto:
                 </div>
               </div>
 
-              {/* Recommended system highlight */}
               <div className="bg-accent/10 border border-accent/30 rounded-2xl p-6">
                 <div className="flex items-center gap-2 mb-3">
                   <CheckCircle2 className="w-5 h-5 text-accent" />
@@ -399,7 +314,6 @@ Respondé en JSON con este esquema exacto:
                 </div>
               </div>
 
-              {/* Systems comparison — 3 llave en mano */}
               <div>
                 <h2 className="font-display font-bold text-xl mb-4">Comparativa por sistema — Llave en mano</h2>
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -415,18 +329,16 @@ Respondé en JSON con este esquema exacto:
                 </div>
               </div>
 
-              {/* Obra Gris — alternativa separada */}
               <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
                 <div className="flex items-center gap-2 mb-2">
                   <Building2 className="w-5 h-5 text-amber-600 flex-shrink-0" />
                   <h2 className="font-display font-bold text-lg text-amber-800">Alternativa: Obra Gris</h2>
                   <span className="text-xs bg-amber-100 text-amber-700 border border-amber-300 px-2 py-0.5 rounded-full font-medium">Construcción por etapas</span>
                 </div>
-                <p className="text-sm text-amber-800 mb-2">La Obra Gris no es un sistema constructivo, sino una modalidad sin terminaciones que se puede aplicar a cualquiera de los 3 sistemas. Ideal si querés empezar antes o tenés presupuesto ajustado.</p>
+                <p className="text-sm text-amber-800 mb-2">La Obra Gris no es un sistema constructivo, sino una modalidad sin terminaciones. Ideal si querés empezar antes o tenés presupuesto ajustado.</p>
                 <p className="text-sm font-semibold text-amber-700">Consultá por valores de obra gris en sus diferentes sistemas.</p>
               </div>
 
-              {/* Savings tips */}
               {result.savings_tips?.length > 0 && (
                 <div>
                   <h2 className="font-display font-bold text-xl mb-4 flex items-center gap-2">
@@ -441,7 +353,6 @@ Respondé en JSON con este esquema exacto:
                 </div>
               )}
 
-              {/* Phase strategy */}
               {result.phase_strategy && (
                 <div className="bg-secondary/40 rounded-2xl p-6 border">
                   <div className="flex items-center gap-2 mb-3">
@@ -452,7 +363,6 @@ Respondé en JSON con este esquema exacto:
                 </div>
               )}
 
-              {/* Gap alternatives — one target size, 3 options */}
               {result.computedAlternatives && (
                 <div>
                   <h2 className="font-display font-bold text-xl mb-1">Valores estimados por tamaño</h2>
@@ -463,10 +373,7 @@ Respondé en JSON con este esquema exacto:
                     {(result.computedAlternatives.alts ?? []).map((alt, i) => {
                       const isOG = alt.mode === "obra_gris";
                       return (
-                        <div
-                          key={i}
-                          className={`rounded-xl border p-4 ${isOG ? "bg-amber-50 border-amber-200" : "bg-card border-border"}`}
-                        >
+                        <div key={i} className={`rounded-xl border p-4 ${isOG ? "bg-amber-50 border-amber-200" : "bg-card border-border"}`}>
                           <div className={`text-[11px] font-semibold mb-2 leading-tight ${isOG ? "text-amber-700" : "text-foreground"}`}>
                             {alt.label}
                           </div>
@@ -475,7 +382,7 @@ Respondé en JSON con este esquema exacto:
                           </div>
                           {alt.gap > 0 ? (
                             <div className={`text-xs mt-1 font-medium ${isOG ? "text-amber-600" : "text-primary/70"}`}>
-                              + {formatCurrency(alt.gap)} valores estimados
+                              + {formatCurrency(alt.gap)} adicional
                             </div>
                           ) : (
                             <div className="flex items-center gap-1 text-green-600 text-xs mt-1 font-medium">
@@ -490,7 +397,6 @@ Respondé en JSON con este esquema exacto:
                 </div>
               )}
 
-              {/* CTA */}
               <div className="bg-primary rounded-2xl p-8 text-primary-foreground text-center">
                 <h3 className="font-display font-bold text-2xl mb-2">¿Listo para dar el paso?</h3>
                 <p className="text-primary-foreground/80 mb-6 max-w-md mx-auto text-sm">
