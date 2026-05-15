@@ -43,14 +43,14 @@ export default function SummaryStep({ area, system, finishMode, finishTier, fini
   const justUnlocked = urlParams.get("pdf_unlocked") === "1";
 
   // PDF is unlocked if user has paid (stored on user entity) OR just returned from payment
-  const pdfUnlocked = user?.pdf_unlocked === true || justUnlocked;
-
+const pdfUnlocked = user?.pdf_unlocked === true || justUnlocked || localUnlocked;
   const { data: termsData = [] } = useQuery({
     queryKey: ["terms_config"],
     queryFn: () => base44.entities.TermsConfig.list("order", 50),
     staleTime: 60_000,
   });
   const [saving, setSaving] = useState(false);
+  const [localUnlocked, setLocalUnlocked] = useState(false);
   const [savedBanner, setSavedBanner] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
   const [contactForm, setContactForm] = useState({ name: user?.full_name || "", email: user?.email || "", phone: "", message: "" });
@@ -438,9 +438,8 @@ export default function SummaryStep({ area, system, finishMode, finishTier, fini
 
         {/* Premium PDF Gate */}
         {isAuthenticated && !pdfUnlocked && (
-          <PremiumPDFGate />
-        )}
-
+        <PremiumPDFGate onUnlocked={() => setLocalUnlocked(true)} />
+)}
         {/* Auth notice */}
         {!isAuthenticated && (
           <motion.div
