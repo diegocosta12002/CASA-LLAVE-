@@ -41,7 +41,7 @@ export default function SummaryStep({ area, system, finishMode, finishTier, fini
   // Check if user just returned from Stripe payment success
   const urlParams = new URLSearchParams(window.location.search);
   const justUnlocked = urlParams.get("pdf_unlocked") === "1";
-
+const [localUnlocked, setLocalUnlocked] = useState(false);
   // PDF is unlocked if user has paid (stored on user entity) OR just returned from payment
 const pdfUnlocked = user?.pdf_unlocked === true || justUnlocked || localUnlocked;
   const { data: termsData = [] } = useQuery({
@@ -50,7 +50,6 @@ const pdfUnlocked = user?.pdf_unlocked === true || justUnlocked || localUnlocked
     staleTime: 60_000,
   });
   const [saving, setSaving] = useState(false);
-  const [localUnlocked, setLocalUnlocked] = useState(false);
   const [savedBanner, setSavedBanner] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
   const [contactForm, setContactForm] = useState({ name: user?.full_name || "", email: user?.email || "", phone: "", message: "" });
