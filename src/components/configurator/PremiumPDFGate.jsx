@@ -3,7 +3,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FileText, Lock, Sparkles, Loader2, Crown, Key, X, CheckCircle, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/api/supabaseClient";
+
+// Códigos maestros — pueden usarse infinitas veces
+const MASTER_CODES = ["TOBYCO2024", "TOBYCO2025", "MASTER2024"];
 
 export default function PremiumPDFGate({ onUnlocked }) {
   const [showCodeModal, setShowCodeModal] = useState(false);
@@ -19,21 +22,51 @@ export default function PremiumPDFGate({ onUnlocked }) {
     }
     setLoading(true);
     setError("");
+
     try {
-      const res = await base44.functions.invoke("redeemCode", { code: code.trim() });
-      if (res.data?.success) {
+      const upperCode = code.trim().toUpperCase();
+
+      // Verificar si es un código maestro
+      if (MASTER_CODES.includes(upperCode)) {
         setSuccess(true);
         setTimeout(() => {
           setShowCodeModal(false);
           if (onUnlocked) onUnlocked();
-          // Reload to refresh user data
-          window.location.reload();
         }, 1500);
-      } else {
-        setError(res.data?.error || "Código inválido.");
+        return;
       }
+
+      // Buscar el código en Supabase
+      const { data, error: fetchError } = await supabase
+        .from("access_codes")
+        .select("*")
+        .eq("code", upperCode)
+        .single();
+
+      if (fetchError || !data) {
+        setError("Código inválido. Verificá que esté escrito correctamente.");
+        return;
+      }
+
+      if (data.used) {
+        setError("Este código ya fue utilizado.");
+        return;
+      }
+
+      // Marcar el código como usado
+      await supabase
+        .from("access_codes")
+        .update({ used: true, used_at: new Date().toISOString() })
+        .eq("id", data.id);
+
+      setSuccess(true);
+      setTimeout(() => {
+        setShowCodeModal(false);
+        if (onUnlocked) onUnlocked();
+      }, 1500);
+
     } catch (err) {
-      setError(err?.response?.data?.error || "Error al validar el código. Intentá de nuevo.");
+      setError("Error al validar el código. Intentá de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -73,7 +106,6 @@ export default function PremiumPDFGate({ onUnlocked }) {
           ))}
         </ul>
 
-        {/* Transferencia bancaria info */}
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-1">
           <div className="flex items-center gap-2 text-blue-800 font-semibold text-sm">
             <Building2 className="w-4 h-4" /> Pago por transferencia bancaria
@@ -97,7 +129,6 @@ export default function PremiumPDFGate({ onUnlocked }) {
         </p>
       </motion.div>
 
-      {/* Code Modal */}
       <AnimatePresence>
         {showCodeModal && (
           <>
@@ -148,9 +179,9 @@ export default function PremiumPDFGate({ onUnlocked }) {
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Código de acceso</label>
                       <Input
-                        placeholder="Ej: TOBY-XXXX-XXXX"
+                        placeholder="Ej: TOBYCO2024"
                         value={code}
-                        onChange={(e) => { setCode(e.target.value); setError(""); }}
+                        onChange={(e) => { setCode(e.target.value.toUpperCase()); setError(""); }}
                         onKeyDown={(e) => e.key === "Enter" && handleRedeem()}
                         className="text-center font-mono text-base tracking-widest h-11"
                         autoFocus
@@ -171,7 +202,7 @@ export default function PremiumPDFGate({ onUnlocked }) {
                     </div>
 
                     <p className="text-xs text-center text-muted-foreground">
-                      El código puede usarse una sola vez por cuenta.
+                      Los códigos individuales se usan una sola vez.
                     </p>
                   </>
                 )}
