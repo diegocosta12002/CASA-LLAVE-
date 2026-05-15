@@ -138,7 +138,7 @@ const integrations = {
     },
 
     async SendEmail({ to, subject, body }) {
-      const res = await fetch('/api/sendEmail', {
+      const res = await fetch('https://jolly-sunset-7756tobyco-email.diegocosta12002.workers.dev', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to, subject, body }),
