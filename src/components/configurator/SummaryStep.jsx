@@ -52,7 +52,7 @@ const pdfUnlocked = user?.pdf_unlocked === true || justUnlocked || localUnlocked
   const [saving, setSaving] = useState(false);
   const [savedBanner, setSavedBanner] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
-  const [contactForm, setContactForm] = useState({ name: "", email: user?.email || "", phone: "", message: "" });
+  const [contactForm, setContactForm] = useState({ name: "", email: "", phone: "", message: "" });
   const [submitting, setSubmitting] = useState(false);
   const [generatingPDF, setGeneratingPDF] = useState(false);
   const [pdfBanner, setPdfBanner] = useState(false);
