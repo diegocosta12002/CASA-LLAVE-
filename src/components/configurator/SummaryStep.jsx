@@ -169,7 +169,7 @@ const pdfUnlocked = user?.pdf_unlocked === true || justUnlocked || localUnlocked
     if (!contactForm.name || !contactForm.email) {
       setShowContactForm(true);
       setContactForm({ name: "", email: "", phone: "", message: "" });
-setContactForm({ name: "", email: "", phone: "", message: "" });
+
       toast({ title: "Datos requeridos", description: "Por favor completá tu nombre y email antes de descargar el PDF.", variant: "destructive" });
       return;
     }
