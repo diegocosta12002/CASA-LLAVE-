@@ -10,7 +10,7 @@ import {
   BATHROOM_CLADDING, HEATING_TYPES, ELECTRICAL_TYPES, WOODWORK_TYPES
 } from "@/lib/constructionStages";
 import { useAuth } from "@/lib/AuthContext";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/api/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -46,7 +46,7 @@ const [localUnlocked, setLocalUnlocked] = useState(false);
 const pdfUnlocked = user?.pdf_unlocked === true || justUnlocked || localUnlocked;
   const { data: termsData = [] } = useQuery({
     queryKey: ["terms_config"],
-    queryFn: () => base44.entities.TermsConfig.list("order", 50),
+    queryFn: async () => { const { data } = await supabase.from("terms_config").select("*").order("order"); return data || []; },
     staleTime: 60_000,
   });
   const [saving, setSaving] = useState(false);
@@ -71,7 +71,7 @@ const pdfUnlocked = user?.pdf_unlocked === true || justUnlocked || localUnlocked
       ...(stageSelections || {}),
     };
 
-    base44.entities.Lead.create({
+    await supabase.from("leads").insert({
       name: user.full_name || "",
       email: user.email || "",
       configuration: config,
@@ -79,12 +79,11 @@ const pdfUnlocked = user?.pdf_unlocked === true || justUnlocked || localUnlocked
       status: "new",
       source: "configurador",
     });
-  }, [isAuthenticated, user]);
   // eslint-disable-next-line
 
   const { data: dbConfigs = [] } = useQuery({
     queryKey: ["buildconfigs"],
-    queryFn: () => base44.entities.BuildConfig.list("-created_date", 500),
+   queryFn: async () => { const { data } = await supabase.from("build_config").select("*"); return data || []; },
     staleTime: 60_000,
   });
   const baseResult = calculateTotal(area, system, finishMode, finishTier, finishDetails, dbConfigs, floors);
@@ -115,7 +114,7 @@ const pdfUnlocked = user?.pdf_unlocked === true || justUnlocked || localUnlocked
   const handleSave = async () => {
     if (!requireAuth()) return;
     setSaving(true);
-    await base44.entities.SavedProject.create({
+          await supabase.from("saved_projects").insert({
       project_name: `Casa ${area}m² - ${systemInfo?.label}`,
       area_m2: area,
       construction_system: system,
@@ -125,7 +124,6 @@ const pdfUnlocked = user?.pdf_unlocked === true || justUnlocked || localUnlocked
       total_price: grandTotal,
       breakdown: { ...baseResult.breakdown, stages: stagesResult.total },
     });
-    setSaving(false);
     setSavedBanner(true);
   };
 
@@ -136,15 +134,15 @@ const pdfUnlocked = user?.pdf_unlocked === true || justUnlocked || localUnlocked
       return;
     }
     setSubmitting(true);
-    await base44.entities.Lead.create({
-      name: contactForm.name,
-      email: contactForm.email,
-      phone: contactForm.phone,
-      message: contactForm.message,
-      configuration: { area, system: systemInfo?.label, finishTier, ...stageSelections },
-      total_price: grandTotal,
-      status: "new",
-    });
+    await supabase.from("leads").insert({
+        name: contactForm.name,
+        email: contactForm.email,
+        phone: contactForm.phone,
+        message: contactForm.message,
+        configuration: { area, system: systemInfo?.label, finishTier, ...stageSelections },
+        total_price: grandTotal,
+        status: "new",
+      });
     setSubmitting(false);
     setShowContactForm(false);
     toast({ title: "Consulta enviada", description: "Nos pondremos en contacto contigo pronto." });

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/api/supabaseClient";
 import { calculateTotal, formatCurrency, ALL_SYSTEMS, calculateFloorsCost } from "@/lib/pricingData";
 import { calculateStagesCost, BATHROOM_CONFIG } from "@/lib/constructionStages";
 import { Hammer, PaintBucket, Wrench, FileCheck, TrendingUp, Users, MapPin } from "lucide-react";
@@ -22,7 +22,7 @@ export default function BudgetBreakdownCard({ area, system, stageSelections, flo
 
   const { data: dbConfigs = [] } = useQuery({
     queryKey: ["buildconfigs"],
-    queryFn: () => base44.entities.BuildConfig.list("-created_date", 500),
+    queryFn: async () => { const { data } = await supabase.from("build_config").select("*"); return data || []; },
     staleTime: 60_000,
   });
 

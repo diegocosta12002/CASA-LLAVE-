@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/api/supabaseClient";
 import { OBRA_GRIS_SYSTEMS, formatCurrency, getEstimatedMonths, getSystemCostPerM2 } from "@/lib/pricingData";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +16,7 @@ const iconMap = {
 export default function ModalityStep({ modality, obraGrisSystem, onModalityChange, onObraGrisSystemChange, area, onNext, onBack }) {
   const { data: dbConfigs = [] } = useQuery({
     queryKey: ["buildconfigs"],
-    queryFn: () => base44.entities.BuildConfig.list("-created_date", 500),
+    queryFn: async () => { const { data } = await supabase.from("build_config").select("*"); return data || []; },
     staleTime: 60_000,
   });
 

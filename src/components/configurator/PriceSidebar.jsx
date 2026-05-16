@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/api/supabaseClient";
 import { calculateTotal, formatCurrency, CONSTRUCTION_SYSTEMS, FINISH_TIERS, getEstimatedMonths } from "@/lib/pricingData";
 import { calculateStagesCost, BATHROOM_CONFIG } from "@/lib/constructionStages";
 import { Clock, TrendingUp } from "lucide-react";
@@ -9,7 +9,7 @@ import BudgetBreakdownCard from "@/components/configurator/BudgetBreakdownCard";
 export default function PriceSidebar({ area, system, finishMode, finishTier, finishDetails, stageSelections, floors }) {
   const { data: dbConfigs = [] } = useQuery({
     queryKey: ["buildconfigs"],
-    queryFn: () => base44.entities.BuildConfig.list("-created_date", 500),
+    queryFn: async () => { const { data } = await supabase.from("build_config").select("*"); return data || []; },
     staleTime: 60_000,
   });
   const estimatedMonths = getEstimatedMonths(system, area, dbConfigs);

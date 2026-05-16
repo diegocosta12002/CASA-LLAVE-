@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PREDEFINED_SIZES } from "@/lib/pricingData";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/api/supabaseClient";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,11 +51,8 @@ export default function SizeStep({ area, onAreaChange, floors, onFloorsChange, o
     setHouseImage(null);
     try {
       const sizeLabel = m2 <= 70 ? "small" : m2 <= 120 ? "medium" : m2 <= 200 ? "large" : "very large";
-      const result = await base44.integrations.Core.GenerateImage({
-        prompt: `Modern minimalist house exterior, flat roof, white walls, ${sizeLabel} home, ${m2}sqm, clean lines, professional architecture photo`,
-      });
-      setHouseImage(result.url);
-      setLastGeneratedArea(m2);
+      throw new Error("Image generation not available");
+     
     } catch (e) {
       console.error("Image generation failed", e);
     } finally {

@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/api/supabaseClient";
 import { CONSTRUCTION_SYSTEMS, formatCurrency, getEstimatedMonths, getSystemCostPerM2 } from "@/lib/pricingData";
 // SystemStep shows only the 3 main systems (traditional, steel_frame, mixed)
 import { Button } from "@/components/ui/button";
@@ -22,11 +22,11 @@ export default function SystemStep({ selectedSystem, area, onSystemChange, onNex
 
   const { data: dbConfigs = [] } = useQuery({
     queryKey: ["buildconfigs"],
-    queryFn: () => base44.entities.BuildConfig.list("-created_date", 500),
+    queryFn: async () => { const { data } = await supabase.from("build_config").select("*"); return data || []; },
     staleTime: 60_000,
-  });
-
-  return (
+ });
+ 
+    return (
     <motion.div
       initial={{ opacity: 0, x: 30 }}
       animate={{ opacity: 1, x: 0 }}
