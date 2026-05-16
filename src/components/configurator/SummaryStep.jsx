@@ -143,6 +143,20 @@ const pdfUnlocked = user?.pdf_unlocked === true || justUnlocked || localUnlocked
         total_price: grandTotal,
         status: "new",
       });
+      await fetch("https://jolly-sunset-7756tobyco-email.diegocosta12002.workers.dev", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientName: contactForm.name,
+          clientEmail: contactForm.email,
+          clientPhone: contactForm.phone,
+          area,
+          systemLabel: systemInfo?.label,
+          grandTotal,
+          perM2,
+          estimatedMonths,
+        }),
+      }).catch(err => console.error("Email error:", err));
     setSubmitting(false);
     setShowContactForm(false);
     toast({ title: "Consulta enviada", description: "Nos pondremos en contacto contigo pronto." });
