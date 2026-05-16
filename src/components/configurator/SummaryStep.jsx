@@ -164,7 +164,10 @@ const pdfUnlocked = user?.pdf_unlocked === true || justUnlocked || localUnlocked
       await generateProfessionalPDF({ area, system, stageSelections, baseResult, stagesResult, grandTotal, clientData, termsData, dbConfigs, floors });
       setPdfBanner(true);
       // Enviar email a la empresa con los detalles del presupuesto
-      base44.functions.invoke("sendBudgetEmail", {
+      await fetch("https://jolly-sunset-7756tobyco-email.diegocosta12002.workers.dev", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         clientName: contactForm.name,
         clientEmail: contactForm.email,
         clientPhone: contactForm.phone,
@@ -176,7 +179,8 @@ const pdfUnlocked = user?.pdf_unlocked === true || justUnlocked || localUnlocked
         floors,
         breakdown: { ...baseResult.breakdown, stages: stagesResult.total },
         stageSelections,
-      }).catch(err => console.error("Budget email error:", err));
+      }),
+    }).catch(err => console.error("Budget email error:", err));
     } finally {
       setGeneratingPDF(false);
     }
