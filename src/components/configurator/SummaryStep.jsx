@@ -488,11 +488,11 @@ const pdfUnlocked = user?.pdf_unlocked === true || justUnlocked || localUnlocked
               </button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Input placeholder="Nombre completo *" value={contactForm.name} onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })} />
-              <Input placeholder="Email *" type="email" value={contactForm.email} onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })} />
-              <Input placeholder="Teléfono" value={contactForm.phone} onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })} />
+              <Input placeholder="Nombre completo *" autoComplete="off" value={contactForm.name} onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })} />
+              <Input placeholder="Email *" type="email"autoComplete="off" value={contactForm.email} onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })} />
+              <Input placeholder="Teléfono"autoComplete="off" value={contactForm.phone} onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })} />
             </div>
-            <Textarea placeholder="Mensaje adicional..." value={contactForm.message} onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })} />
+            <Textarea placeholder="Mensaje adicional..."autoComplete="off" value={contactForm.message} onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })} />
             <div className="flex gap-3 justify-end flex-wrap">
               <Button variant="outline" onClick={() => setShowContactForm(false)}>Cancelar</Button>
               <Button onClick={handleSubmitLead} disabled={submitting} className="gap-2">
