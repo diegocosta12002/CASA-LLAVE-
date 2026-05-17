@@ -1,8 +1,8 @@
 // Floor plan PDFs uploaded by the client
 const FLOOR_PLANS = {
-  80:  "https://media.base44.com/files/public/69c56c4515a812726693b5c3/acdb351e8_OBRA80m2-Model.pdf",
-  120: "https://media.base44.com/files/public/69c56c4515a812726693b5c3/7856b483b_casamodelo120m2PDE.pdf",
-  180: "https://media.base44.com/files/public/69c56c4515a812726693b5c3/3a7cfd7f5_casamodelo2PDE180M2.pdf",
+  80: "https://tyxszgqospzunnnehbyj.supabase.co/storage/v1/object/public/assets/OBRA%20JUAN%20CRUZ-Model.pdf",
+  120: "https://tyxszgqospzunnnehbyj.supabase.co/storage/v1/object/public/assets/casa%20modelo%201%20PDE.pdf",
+  180: "https://tyxszgqospzunnnehbyj.supabase.co/storage/v1/object/public/assets/casa%20modelo%202%20PDE%20183M2.pdf",
 };
 
 const PLAN_LABELS = {
@@ -55,7 +55,7 @@ export default function FloorPlan({ area }) {
         {/* Watermark */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
           <img
-            src="https://media.base44.com/images/public/69c56c4515a812726693b5c3/cca51d797_LOGOTOBYCO.jpg"
+            src="https://tyxszgqospzunnnehbyj.supabase.co/storage/v1/object/public/assets/LOGO%20TOBYCO.jpg"
             alt="TOBYCO"
             className="w-40 object-contain opacity-20"
           />
