@@ -129,14 +129,16 @@ const pdfUnlocked = user?.pdf_unlocked === true || justUnlocked || localUnlocked
 
   const handleSubmitLead = async () => {
     if (!requireAuth()) return;
-    if (!contactForm.name || !contactForm.email) {
+    const nameVal = contactForm.name || document.querySelector('input[placeholder="Nombre completo *"]')?.value || "";
+const emailVal = contactForm.email || document.querySelector('input[placeholder="Email *"]')?.value || "";
+if (!nameVal || !emailVal) {
       toast({ title: "Campos requeridos", description: "Por favor completa nombre y email.", variant: "destructive" });
       return;
     }
     setSubmitting(true);
     await supabase.from("leads").insert({
-        name: contactForm.name,
-        email: contactForm.email,
+        name: nameVal,
+        email: emailVal,
         phone: contactForm.phone,
         message: contactForm.message,
         configuration: { area, system: systemInfo?.label, finishTier, ...stageSelections },
@@ -148,8 +150,8 @@ const pdfUnlocked = user?.pdf_unlocked === true || justUnlocked || localUnlocked
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          clientName: contactForm.name,
-          clientEmail: contactForm.email,
+          clientName: nameVal,
+          clientEmail: emailVal,
           clientPhone: contactForm.phone,
           area,
           systemLabel: systemInfo?.label,
@@ -491,8 +493,8 @@ const pdfUnlocked = user?.pdf_unlocked === true || justUnlocked || localUnlocked
               </button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Input placeholder="Nombre completo *" autoComplete="new-password" value={contactForm.name} onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })} />
-              <Input placeholder="Email *" autoComplete="new-password" type="email" value={contactForm.email} onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })} />
+              <Input placeholder="Nombre completo *" value={contactForm.name} onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })} />
+              <Input placeholder="Email *" type="email" value={contactForm.email} onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })} />
               <Input placeholder="Teléfono" value={contactForm.phone} onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })} />
             </div>
             <Textarea placeholder="Mensaje adicional..." value={contactForm.message} onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })} />
