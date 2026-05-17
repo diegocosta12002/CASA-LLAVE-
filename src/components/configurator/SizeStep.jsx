@@ -45,20 +45,11 @@ export default function SizeStep({ area, onAreaChange, floors, onFloorsChange, o
     setCustomMode(true);
   };
 
-  const generateHouseImage = async (m2) => {
-    if (generatingImage) return;
-    setGeneratingImage(true);
-    setHouseImage(null);
-    try {
-      const sizeLabel = m2 <= 70 ? "small" : m2 <= 120 ? "medium" : m2 <= 200 ? "large" : "very large";
-      throw new Error("Image generation not available");
-     
-    } catch (e) {
-      console.error("Image generation failed", e);
-    } finally {
-      setGeneratingImage(false);
-    }
-  };
+  const getStaticHouseImage = (m2) => {
+  if (m2 <= 90) return "https://tyxszgqospzunnnehbyj.supabase.co/storage/v1/object/public/assets/casa%2080m2.jpg";
+  if (m2 <= 140) return "https://tyxszgqospzunnnehbyj.supabase.co/storage/v1/object/public/assets/casa%20120m2.jpg";
+  return "https://tyxszgqospzunnnehbyj.supabase.co/storage/v1/object/public/assets/CASA%20180M2.jpeg";
+};
 
   const bathSuggestion = Object.entries(BATHROOM_SUGGESTIONS).reduce((acc, [m, s]) => {
     if (area >= Number(m)) return s;
@@ -240,53 +231,21 @@ export default function SizeStep({ area, onAreaChange, floors, onFloorsChange, o
       {/* Floor Plan — updates reactively with area */}
       <FloorPlan area={area} stageSelections={{}} />
 
-      {/* AI House Image */}
-      <div className="rounded-xl border bg-card overflow-hidden">
-        <div className="p-4 flex items-center justify-between border-b">
-          <div>
-            <div className="font-medium text-sm">Imagen ilustrativa</div>
-            <div className="text-xs text-muted-foreground">Genera una vista de ejemplo de tu casa</div>
-          </div>
-          <Button
-            onClick={() => generateHouseImage(area)}
-            disabled={generatingImage}
-            size="sm"
-            variant="outline"
-            className="gap-2"
-          >
-            {generatingImage ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Generando...</>
-            ) : (
-              <><ImageIcon className="w-4 h-4" /> Ver ejemplo</>
-            )}
-          </Button>
-        </div>
-        <AnimatePresence mode="wait">
-          {houseImage ? (
-            <motion.div
-              key="image"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="relative"
-            >
-              <img src={houseImage} alt={`Casa ${area}m²`} className="w-full aspect-video object-cover" />
-              <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-center text-xs py-2">
-                ⚠️ Imagen ilustrativa generada por IA — Solo a modo de ejemplo para una casa de {lastGeneratedArea} m²
-              </div>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="placeholder"
-              className="aspect-video flex items-center justify-center bg-secondary/30 text-muted-foreground"
-            >
-              <div className="text-center space-y-2">
-                <ImageIcon className="w-10 h-10 mx-auto opacity-30" />
-                <div className="text-sm">Haz clic en "Ver ejemplo" para generar una imagen ilustrativa</div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+      {/* House Image */}
+<div className="rounded-xl border bg-card overflow-hidden">
+  <div className="p-4 border-b">
+    <div className="font-medium text-sm">Imagen ilustrativa</div>
+    <div className="text-xs text-muted-foreground">Vista de ejemplo de tu casa</div>
+  </div>
+  <motion.img
+    key={area}
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    src={getStaticHouseImage(area)}
+    alt={`Casa ${area}m²`}
+    className="w-full aspect-video object-cover"
+  />
+</div>
 
       <div className="flex justify-end pb-20 lg:pb-0">
         <Button onClick={onNext} size="lg" className="gap-2 px-8">
