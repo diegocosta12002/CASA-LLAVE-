@@ -52,7 +52,7 @@ const pdfUnlocked = user?.pdf_unlocked === true || justUnlocked || localUnlocked
   const [saving, setSaving] = useState(false);
   const [savedBanner, setSavedBanner] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
-  const [contactForm, setContactForm] = useState({ name: "", email: "", phone: "", message: "" });
+  const [contactForm, setContactForm] = useState({ name: user?.full_name || "", email: user?.email || "", phone: "", message: "" });
   const [submitting, setSubmitting] = useState(false);
   const [generatingPDF, setGeneratingPDF] = useState(false);
   const [pdfBanner, setPdfBanner] = useState(false);
@@ -79,8 +79,9 @@ const pdfUnlocked = user?.pdf_unlocked === true || justUnlocked || localUnlocked
       status: "new",
       source: "configurador",
     });
-  })();
-  // eslint-disable-next-line
+    })();
+  }, []);
+    // eslint-disable-next-line
 
   const { data: dbConfigs = [] } = useQuery({
     queryKey: ["buildconfigs"],
@@ -130,29 +131,26 @@ const pdfUnlocked = user?.pdf_unlocked === true || justUnlocked || localUnlocked
 
   const handleSubmitLead = async () => {
     if (!requireAuth()) return;
-    const nameVal = contactForm.name || document.querySelector('input[placeholder="Nombre completo *"]')?.value || "";
-const emailVal = contactForm.email || document.querySelector('input[placeholder="Email *"]')?.value || "";
-if (!nameVal || !emailVal) {
+    if (!contactForm.name || !contactForm.email) {
       toast({ title: "Campos requeridos", description: "Por favor completa nombre y email.", variant: "destructive" });
       return;
     }
     setSubmitting(true);
     await supabase.from("leads").insert({
-        name: nameVal,
-        email: emailVal,
+        name: contactForm.name,
+        email: contactForm.email,
         phone: contactForm.phone,
         message: contactForm.message,
         configuration: { area, system: systemInfo?.label, finishTier, ...stageSelections },
         total_price: grandTotal,
         status: "new",
       });
-      console.log("Enviando mail al worker...");
       await fetch("https://jolly-sunset-7756tobyco-email.diegocosta12002.workers.dev", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          clientName: nameVal,
-          clientEmail: emailVal,
+          clientName: contactForm.name,
+          clientEmail: contactForm.email,
           clientPhone: contactForm.phone,
           area,
           systemLabel: systemInfo?.label,
@@ -171,8 +169,6 @@ if (!nameVal || !emailVal) {
     // Si faltan datos obligatorios, abrir el formulario y no continuar
     if (!contactForm.name || !contactForm.email) {
       setShowContactForm(true);
-      setContactForm({ name: "", email: "", phone: "", message: "" });
-
       toast({ title: "Datos requeridos", description: "Por favor completá tu nombre y email antes de descargar el PDF.", variant: "destructive" });
       return;
     }
@@ -209,7 +205,6 @@ if (!nameVal || !emailVal) {
     // Si faltan datos obligatorios, abrir el formulario y no continuar
     if (!contactForm.name || !contactForm.email) {
       setShowContactForm(true);
-      setContactForm({ name: "", email: "", phone: "", message: "" });
       toast({ title: "Datos requeridos", description: "Por favor completá tu nombre y email antes de imprimir.", variant: "destructive" });
       return;
     }
@@ -225,7 +220,6 @@ if (!nameVal || !emailVal) {
   const handleShowContact = () => {
     if (!requireAuth()) return;
     setShowContactForm(true);
-    setContactForm({ name: "", email: "", phone: "", message: "" });
   };
 
   return (
