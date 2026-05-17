@@ -59,7 +59,7 @@ const pdfUnlocked = user?.pdf_unlocked === true || justUnlocked || localUnlocked
   const autoSavedRef = useRef(false);
 
   // Auto-save budget as lead when user reaches summary
-  useEffect(() => {
+  useEffect(() => { (async () => {
     if (!isAuthenticated || !user || autoSavedRef.current) return;
     autoSavedRef.current = true;
 
@@ -79,6 +79,7 @@ const pdfUnlocked = user?.pdf_unlocked === true || justUnlocked || localUnlocked
       status: "new",
       source: "configurador",
     });
+  })();
   // eslint-disable-next-line
 
   const { data: dbConfigs = [] } = useQuery({
