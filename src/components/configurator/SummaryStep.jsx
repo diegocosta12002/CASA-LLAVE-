@@ -491,8 +491,8 @@ const pdfUnlocked = user?.pdf_unlocked === true || justUnlocked || localUnlocked
               </button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Input placeholder="Nombre completo *" autoComplete="off" value={contactForm.name} onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })} />
-              <Input placeholder="Email *" autoComplete="off" type="email" value={contactForm.email} onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })} />
+              <Input placeholder="Nombre completo *" autoComplete="new-password" value={contactForm.name} onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })} />
+              <Input placeholder="Email *" autoComplete="new-password" type="email" value={contactForm.email} onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })} />
               <Input placeholder="Teléfono" value={contactForm.phone} onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })} />
             </div>
             <Textarea placeholder="Mensaje adicional..." value={contactForm.message} onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })} />
